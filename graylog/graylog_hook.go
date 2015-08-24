@@ -17,6 +17,17 @@ import (
 // be available in the queue.
 var BufSize uint = 8192
 
+//
+// 0       Emergency: system is unusable
+// 1       Alert: action must be taken immediately
+// 2       Critical: critical conditions
+// 3       Error: error conditions
+// 4       Warning: warning conditions
+// 5       Notice: normal but significant condition
+// 6       Informational: informational messages
+// 7       Debug: debug-level messages
+var levelMap = map[logrus.Level]int32{logrus.PanicLevel: 0, logrus.FatalLevel: 2, logrus.ErrorLevel: 3, logrus.InfoLevel: 6, logrus.WarnLevel: 4, logrus.DebugLevel: 7}
+
 // GraylogHook to send logs to a logging service compatible with the Graylog API and the GELF format.
 type GraylogHook struct {
 	Facility   string
@@ -84,7 +95,11 @@ func (hook *GraylogHook) fire() {
 			full = p
 		}
 
-		level := int32(entry.Level) + 2 // logrus levels are lower than syslog by 2
+		// map logrus to syslog levels
+		level, ok := levelMap[entry.Level]
+		if ok == false {
+			level = levelMap[logrus.InfoLevel]
+		}
 
 		// Don't modify entry.Data directly, as the entry will used after this hook was fired
 		extra := map[string]interface{}{}
