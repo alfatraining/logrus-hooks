@@ -26,10 +26,10 @@ var BufSize uint = 8192
 // 5       Notice: normal but significant condition
 // 6       Informational: informational messages
 // 7       Debug: debug-level messages
-var levelMap = map[logrus.Level]int32{logrus.PanicLevel: 0, logrus.FatalLevel: 2, logrus.ErrorLevel: 3, logrus.InfoLevel: 6, logrus.WarnLevel: 4, logrus.DebugLevel: 7}
+var levelMap = map[logrus.Level]int32{logrus.PanicLevel: 1, logrus.FatalLevel: 2, logrus.ErrorLevel: 3, logrus.InfoLevel: 6, logrus.WarnLevel: 4, logrus.DebugLevel: 7}
 
-// GraylogHook to send logs to a logging service compatible with the Graylog API and the GELF format.
-type GraylogHook struct {
+// Hook to send logs to a logging service compatible with the Graylog API and the GELF format.
+type Hook struct {
 	Facility   string
 	Extra      map[string]interface{}
 	gelfLogger *gelf.Writer
@@ -44,12 +44,12 @@ type graylogEntry struct {
 }
 
 // NewGraylogHook creates a hook to be added to an instance of logger.
-func NewGraylogHook(addr string, facility string, extra map[string]interface{}) *GraylogHook {
+func NewGraylogHook(addr string, facility string, extra map[string]interface{}) *Hook {
 	g, err := gelf.NewWriter(addr)
 	if err != nil {
 		logrus.WithField("err", err).Info("Can't create Gelf logger")
 	}
-	hook := &GraylogHook{
+	hook := &Hook{
 		Facility:   facility,
 		Extra:      extra,
 		gelfLogger: g,
@@ -62,7 +62,7 @@ func NewGraylogHook(addr string, facility string, extra map[string]interface{}) 
 // Fire is called when a log event is fired.
 // We assume the entry will be altered by another hook,
 // otherwise we might logging something wrong to Graylog
-func (hook *GraylogHook) Fire(entry *logrus.Entry) error {
+func (hook *Hook) Fire(entry *logrus.Entry) error {
 	// get caller file and line here, it won't be available inside the goroutine
 	// 1 for the function that called us.
 	file, line := getCallerIgnoringLogMulti(1)
@@ -71,7 +71,7 @@ func (hook *GraylogHook) Fire(entry *logrus.Entry) error {
 }
 
 // fire will loop on the 'buf' channel, and write entries to graylog
-func (hook *GraylogHook) fire() {
+func (hook *Hook) fire() {
 	for {
 		entry := <-hook.buf // receive new entry on channel
 		host, err := os.Hostname()
@@ -101,7 +101,6 @@ func (hook *GraylogHook) fire() {
 			level = levelMap[logrus.InfoLevel]
 		}
 
-		// Don't modify entry.Data directly, as the entry will used after this hook was fired
 		extra := map[string]interface{}{}
 		// Merge extra fields
 		for k, v := range hook.Extra {
@@ -113,6 +112,8 @@ func (hook *GraylogHook) fire() {
 				extra[k] = v
 			}
 		}
+
+		// Don't modify entry.Data directly, as the entry will used after this hook was fired
 		for k, v := range entry.Data {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
 			// if the type has a custom String(), use it
@@ -140,8 +141,8 @@ func (hook *GraylogHook) fire() {
 	}
 }
 
-// Levels returns the available logging levels.
-func (hook *GraylogHook) Levels() []logrus.Level {
+// Levels returns the available logging levels. Required by logrus hook interface
+func (hook *Hook) Levels() []logrus.Level {
 	return []logrus.Level{
 		logrus.PanicLevel,
 		logrus.FatalLevel,
