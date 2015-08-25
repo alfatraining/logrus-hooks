@@ -10,6 +10,13 @@ import (
 
 const SyslogInfoLevel = 6
 
+type CustomTypeStringer struct {
+}
+
+func (c CustomTypeStringer) String() string {
+	return "CustomTypeStringer()!"
+}
+
 func TestWritingToUDP(t *testing.T) {
 	r, err := gelf.NewReader("127.0.0.1:0")
 	if err != nil {
@@ -17,10 +24,11 @@ func TestWritingToUDP(t *testing.T) {
 	}
 	hook := NewGraylogHook(r.Addr(), "test_facility", map[string]interface{}{"foo": "bar"})
 	msgData := "test message\nsecond line"
+	ct := &CustomTypeStringer{}
 
 	log := logrus.New()
 	log.Hooks.Add(hook)
-	log.WithField("withField", "1").Info(msgData)
+	log.WithFields(logrus.Fields{"withField": "1", "custom": ct}).Info(msgData)
 
 	msg, err := r.ReadMessage()
 
@@ -44,29 +52,30 @@ func TestWritingToUDP(t *testing.T) {
 		t.Errorf("msg.Facility: expected %#v, got %#v)", "test_facility", msg.Facility)
 	}
 
-	if len(msg.Extra) != 2 {
-		t.Errorf("wrong number of extra fields (exp: %d, got %d) in %v", 2, len(msg.Extra), msg.Extra)
-	}
-
 	fileExpected := "graylog_hook_test.go"
 	if !strings.HasSuffix(msg.File, fileExpected) {
 		t.Errorf("msg.File: expected %s, got %s", fileExpected,
 			msg.File)
 	}
 
-	if msg.Line != 23 { // Update this if code is updated above
+	if msg.Line != 31 { // Update this if code is updated above
 		t.Errorf("msg.Line: expected %d, got %d", 25, msg.Line)
 	}
 
-	if len(msg.Extra) != 2 {
-		t.Errorf("wrong number of extra fields (exp: %d, got %d) in %v", 2, len(msg.Extra), msg.Extra)
+	const expectedExtraFields = 3
+	if len(msg.Extra) != expectedExtraFields {
+		t.Errorf("wrong number of extra fields (exp: %d, got %d) in %v", expectedExtraFields, len(msg.Extra), msg.Extra)
 	}
 
-	extra := map[string]interface{}{"foo": "bar", "withField": "1"}
+	extra := map[string]string{"foo": "bar", "withField": "1", "custom": ct.String()}
 
 	for k, v := range extra {
 		// Remember extra fileds are prefixed with "_"
-		if msg.Extra["_"+k].(string) != extra[k].(string) {
+		str, ok := msg.Extra["_"+k].(string)
+		if ok == false {
+			t.Errorf("Expected string as type of '%s' but it was not", k)
+		}
+		if str != extra[k] {
 			t.Errorf("Expected extra '%s' to be %#v, got %#v", k, v, msg.Extra["_"+k])
 		}
 	}

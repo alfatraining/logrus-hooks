@@ -106,24 +106,34 @@ func (hook *GraylogHook) fire() {
 		// Merge extra fields
 		for k, v := range hook.Extra {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			extra[k] = v
+			// if the type has a custom String(), use it
+			if si, ok := v.(fmt.Stringer); ok {
+				extra[k] = si.String()
+			} else {
+				extra[k] = v
+			}
 		}
 		for k, v := range entry.Data {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			extra[k] = v
+			// if the type has a custom String(), use it
+			if si, ok := v.(fmt.Stringer); ok {
+				extra[k] = si.String()
+			} else {
+				extra[k] = v
+			}
 		}
 
 		m := gelf.Message{
-			Version:  "1.1",
-			Host:     host,
-			Short:    string(short),
-			Full:     string(full),
+			Version:    "1.1",
+			Host:       host,
+			Short:      string(short),
+			Full:       string(full),
 			TimeUnixMs: time.Now().UnixNano() / 1000000,
-			Level:    level,
-			Facility: hook.Facility,
-			File:     entry.file,
-			Line:     entry.line,
-			Extra:    extra,
+			Level:      level,
+			Facility:   hook.Facility,
+			File:       entry.file,
+			Line:       entry.line,
+			Extra:      extra,
 		}
 
 		w.WriteMessage(&m) // If WriteMessage failed, just give up, don't look to death
