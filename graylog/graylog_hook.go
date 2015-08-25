@@ -118,7 +118,7 @@ func (hook *GraylogHook) fire() {
 			Host:     host,
 			Short:    string(short),
 			Full:     string(full),
-			TimeUnix: time.Now().Unix(),
+			TimeUnixMs: time.Now().UnixNano() / 1000000,
 			Level:    level,
 			Facility: hook.Facility,
 			File:     entry.file,
