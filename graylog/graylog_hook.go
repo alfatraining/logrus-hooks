@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/SocialCodeInc/go-gelf/gelf"
+	"github.com/alfatraining/go-gelf/gelf"
 )
 
 // Set graylog.BufSize = <value> _before_ calling NewGraylogHook
