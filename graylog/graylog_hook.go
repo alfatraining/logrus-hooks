@@ -102,6 +102,10 @@ func (hook *Hook) fire() {
 		}
 
 		extra := map[string]interface{}{}
+
+		// add the logrus Level as a field in order to have the name of the level as well... I can't watch levels as numbers anymore
+		extra["_severity"] = fmt.Sprintf("%s", entry.Level)
+
 		// Merge extra fields
 		for k, v := range hook.Extra {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."

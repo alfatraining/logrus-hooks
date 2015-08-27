@@ -62,7 +62,7 @@ func TestWritingToUDP(t *testing.T) {
 		t.Errorf("msg.Line: expected %d, got %d", 25, msg.Line)
 	}
 
-	const expectedExtraFields = 3
+	const expectedExtraFields = 4
 	if len(msg.Extra) != expectedExtraFields {
 		t.Errorf("wrong number of extra fields (exp: %d, got %d) in %v", expectedExtraFields, len(msg.Extra), msg.Extra)
 	}
