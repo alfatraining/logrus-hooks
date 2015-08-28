@@ -109,23 +109,13 @@ func (hook *Hook) fire() {
 		// Merge extra fields
 		for k, v := range hook.Extra {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			// if the type has a custom String(), use it
-			if si, ok := v.(fmt.Stringer); ok {
-				extra[k] = si.String()
-			} else {
-				extra[k] = v
-			}
+			extra[k] = fmt.Sprintf("%v", v)
 		}
 
 		// Don't modify entry.Data directly, as the entry will used after this hook was fired
 		for k, v := range entry.Data {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			// if the type has a custom String(), use it
-			if si, ok := v.(fmt.Stringer); ok {
-				extra[k] = si.String()
-			} else {
-				extra[k] = v
-			}
+			extra[k] = fmt.Sprintf("%v", v)
 		}
 
 		m := gelf.Message{
