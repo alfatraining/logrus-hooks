@@ -71,6 +71,22 @@ func (hook *Hook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
+// [ks] - format based on type
+func formatForJSON(value interface{}) interface{} {
+	switch value.(type) {
+	case int:
+		return value
+	case float64:
+		return value
+	case bool:
+		return value
+	case string:
+		return value
+	default:
+		return fmt.Sprintf("%s", value)
+	}
+}
+
 // fire will loop on the 'buf' channel, and write entries to graylog
 func (hook *Hook) fire() {
 	for {
@@ -110,13 +126,13 @@ func (hook *Hook) fire() {
 		// Merge extra fields
 		for k, v := range hook.Extra {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			extra[k] = fmt.Sprintf("%v", v)
+			extra[k] = formatForJSON(v)
 		}
 
 		// Don't modify entry.Data directly, as the entry will used after this hook was fired
 		for k, v := range entry.Data {
 			k = fmt.Sprintf("_%s", k) // "[...] every field you send and prefix with a _ (underscore) will be treated as an additional field."
-			extra[k] = fmt.Sprintf("%v", v)
+			extra[k] = formatForJSON(v)
 		}
 
 		m := gelf.Message{
