@@ -1,3 +1,7 @@
+This is deprecated, do not use anymore.
+
+Use the (new repositority)[https://github.com/alfatraining/logrus-graylog-hook]
+
 # Logrus Hooks <img src="http://i.imgur.com/hTeVwmJ.png" width="40" height="40" alt=":walrus:" class="emoji" title=":walrus:" />
 
 Some hooks for logrus.
